@@ -113,8 +113,7 @@ namespace DapperUtils
 
         private string GetColumnAttributeValue(PropertyInfo propertyInfo)
         {
-            ColumnAttribute columnAttribute = propertyInfo.GetCustomAttributes(false).OfType<ColumnAttribute>().FirstOrDefault();
-
+            var columnAttribute = propertyInfo.GetCustomAttributes(false).OfType<ColumnAttribute>().FirstOrDefault();
             return columnAttribute != null ? columnAttribute.Name : null;
         }
 
@@ -125,14 +124,14 @@ namespace DapperUtils
 
         private void ConfigureDapperColumnMapping(Type propertyType)
         {
-            Type[] t = { propertyType };
+            Type[] t = {propertyType};
 
             if (propertyType.IsGenericType)
             {
                 t = propertyType.GetGenericArguments();
             }
 
-            Func<Type, string, System.Reflection.PropertyInfo> mapping = (type, columnName) =>
+            Func<Type, string, PropertyInfo> mapping = (type, columnName) =>
                 type.GetProperties().FirstOrDefault(prop => GetColumnAttributeValue(prop) == columnName);
 
             for (int i = 0; i < t.Length; i++)
@@ -141,8 +140,8 @@ namespace DapperUtils
 
                 //map properties that are not value types
                 foreach (var property in t[i].GetProperties(BindingFlags.Instance
-                                                          | BindingFlags.NonPublic
-                                                          | BindingFlags.Public))
+                                                            | BindingFlags.NonPublic
+                                                            | BindingFlags.Public))
                 {
                     if (property.PropertyType.IsValueType == false)
                     {
