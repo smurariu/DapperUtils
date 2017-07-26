@@ -99,7 +99,31 @@ namespace DapperUtils
 
             return (dataTable);
         }
-
+        
+        /// <summary>
+        ///     Executes work transactionally
+        /// </summary>
+        /// <param name="connection">The connection to use</param>
+        /// <param name="work">The work to be executed</param>
+        /// <param name="isolationLevel">The IsolationLevel to use. Default set to ReadCommitted.</param>
+        /// <returns></returns>
+        public async Task<T> Transactionally<T>(IDbConnection connection, Func<IDbTransaction, Task<T>> work,
+           IsolationLevel isolationLevel = IsolationLevel.ReadCommitted)
+        {
+            using (IDbTransaction transaction = connection.BeginTransaction(isolationLevel))
+            {
+                try
+                {
+                    return await work(transaction);
+                }
+                catch
+                {
+                    transaction.Rollback();
+                    throw;
+                }
+            }
+        }
+        
         #region Private Methods
 
         private async Task<IDbConnection> GetOpenConnectionAsync()
