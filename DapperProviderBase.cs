@@ -102,7 +102,31 @@ namespace DapperUtils
 
             return (dataTable);
         }
-
+        
+        /// <summary>
+        ///     Executes work transactionally
+        /// </summary>
+        /// <param name="connection">The connection to use</param>
+        /// <param name="work">The work to be executed</param>
+        /// <param name="isolationLevel">The IsolationLevel to use. Default set to ReadCommitted.</param>
+        /// <returns></returns>
+        public async Task<T> Transactionally<T>(IDbConnection connection, Func<IDbTransaction, Task<T>> work,
+           IsolationLevel isolationLevel = IsolationLevel.ReadCommitted)
+        {
+            using (IDbTransaction transaction = connection.BeginTransaction(isolationLevel))
+            {
+                try
+                {
+                    return await work(transaction);
+                }
+                catch
+                {
+                    transaction.Rollback();
+                    throw;
+                }
+            }
+        }
+        
         #region Private Methods
 
         private async Task<IDbConnection> GetOpenConnectionAsync()
@@ -116,8 +140,7 @@ namespace DapperUtils
 
         private string GetColumnAttributeValue(PropertyInfo propertyInfo)
         {
-            ColumnAttribute columnAttribute = propertyInfo.GetCustomAttributes(false).OfType<ColumnAttribute>().FirstOrDefault();
-
+            var columnAttribute = propertyInfo.GetCustomAttributes(false).OfType<ColumnAttribute>().FirstOrDefault();
             return columnAttribute != null ? columnAttribute.Name : null;
         }
 
@@ -128,14 +151,14 @@ namespace DapperUtils
 
         private void ConfigureDapperColumnMapping(Type propertyType)
         {
-            Type[] t = { propertyType };
+            Type[] t = {propertyType};
 
             if (propertyType.IsGenericType)
             {
                 t = propertyType.GetGenericArguments();
             }
 
-            Func<Type, string, System.Reflection.PropertyInfo> mapping = (type, columnName) =>
+            Func<Type, string, PropertyInfo> mapping = (type, columnName) =>
                 type.GetProperties().FirstOrDefault(prop => GetColumnAttributeValue(prop) == columnName);
 
             for (int i = 0; i < t.Length; i++)
@@ -144,8 +167,8 @@ namespace DapperUtils
 
                 //map properties that are not value types
                 foreach (var property in t[i].GetProperties(BindingFlags.Instance
-                                                          | BindingFlags.NonPublic
-                                                          | BindingFlags.Public))
+                                                            | BindingFlags.NonPublic
+                                                            | BindingFlags.Public))
                 {
                     if (property.PropertyType.IsValueType == false)
                     {
