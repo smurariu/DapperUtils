@@ -65,11 +65,14 @@ namespace DapperUtils
             {
                 var propertyInfo = tableType.GetProperties()[counter];
 
-                string columnName = GetColumnAttributeValue(propertyInfo);
+                string columnName = GetColumnAttributeValue(propertyInfo) ?? propertyInfo.Name;
 
-                columnNameMappingDictionary.Add(propertyInfo.Name, columnName ?? propertyInfo.Name);
+                Type columnType = Nullable.GetUnderlyingType(tableType.GetProperties()[counter].PropertyType) ??
+                                  tableType.GetProperties()[counter].PropertyType;
 
-                dataTable.Columns.Add(columnName ?? propertyInfo.Name, tableType.GetProperties()[counter].PropertyType);
+                columnNameMappingDictionary.Add(propertyInfo.Name, columnName);
+                
+                dataTable.Columns.Add(columnName, columnType);
             }
 
             // Return parameter with null value
@@ -91,7 +94,7 @@ namespace DapperUtils
                     //Fetch Value for each column for each element in the List<T>
                     dataRow[columnName] = item
                         .GetType().GetProperties()[counter]
-                        .GetValue(item);
+                        .GetValue(item) ?? DBNull.Value;
                 }
                 // Add Row to Table
                 dataTable.Rows.Add(dataRow);
