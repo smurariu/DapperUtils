@@ -1,4 +1,4 @@
-﻿﻿using Dapper;
+﻿using Dapper;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -12,10 +12,10 @@ namespace DapperUtils
 {
     public class DapperProviderBase
     {
-        private readonly string _connectionString = String.Empty;   
+        private readonly string _connectionString = String.Empty;
 
         /// <summary>
-        /// Creates a new instance of the base provider
+        ///     Creates a new instance of the base provider
         /// </summary>
         /// <param name="connectionString">Connectoin string to use</param>
         public DapperProviderBase(string connectionString)
@@ -24,7 +24,7 @@ namespace DapperUtils
         }
 
         /// <summary>
-        /// Connects async to the database
+        ///     Connects async to the database
         /// </summary>
         /// <typeparam name="R">The return type of the method to execute</typeparam>
         /// <param name="f">Method to execute</param>
@@ -40,8 +40,8 @@ namespace DapperUtils
         }
 
         /// <summary>
-        ///  Convert IEnumerable<T> to DataTable 
-        ///  (useful when calling storeds that have table-valued parameters)
+        ///     Convert IEnumerable<T> to DataTable 
+        ///     (useful when calling storeds that have table-valued parameters)
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="collection"></param>
@@ -71,7 +71,7 @@ namespace DapperUtils
                                   tableType.GetProperties()[counter].PropertyType;
 
                 columnNameMappingDictionary.Add(propertyInfo.Name, columnName);
-                
+
                 dataTable.Columns.Add(columnName, columnType);
             }
 
@@ -102,7 +102,7 @@ namespace DapperUtils
 
             return (dataTable);
         }
-        
+
         /// <summary>
         ///     Executes work transactionally
         /// </summary>
@@ -126,7 +126,7 @@ namespace DapperUtils
                 }
             }
         }
-        
+
         #region Private Methods
 
         private async Task<IDbConnection> GetOpenConnectionAsync()
@@ -141,7 +141,7 @@ namespace DapperUtils
         private string GetColumnAttributeValue(PropertyInfo propertyInfo)
         {
             var columnAttribute = propertyInfo.GetCustomAttributes(false).OfType<ColumnAttribute>().FirstOrDefault();
-            return columnAttribute != null ? columnAttribute.Name : null;
+            return columnAttribute?.Name;
         }
 
         private void ConfigureDapperColumnMapping<T>()
@@ -151,7 +151,7 @@ namespace DapperUtils
 
         private void ConfigureDapperColumnMapping(Type propertyType)
         {
-            Type[] t = {propertyType};
+            Type[] t = { propertyType };
 
             if (propertyType.IsGenericType)
             {
@@ -167,12 +167,12 @@ namespace DapperUtils
 
                 //map properties that are not value types
                 foreach (var property in t[i].GetProperties(BindingFlags.Instance
-                                                            | BindingFlags.NonPublic
-                                                            | BindingFlags.Public))
+                                                          | BindingFlags.NonPublic
+                                                          | BindingFlags.Public))
                 {
                     if (property.PropertyType.IsValueType == false)
                     {
-                        //WARNING: Infinite recursion is possible
+                        //WARNING: Infinite recursion is possible if you have circular references
                         ConfigureDapperColumnMapping(property.PropertyType);
                     }
                 }
